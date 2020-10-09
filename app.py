@@ -1,33 +1,34 @@
-import numpy as np
-import pandas as pd
-from flask import Flask, request, render_template
+# Importing essential libraries
+from flask import Flask, render_template, request
 import pickle
+import numpy as np
+
+# Load the Random Forest CLassifier model
+filename = 'diabetes-prediction-rfc-model.pkl'
+classifier = pickle.load(open(filename, 'rb'))
 
 app = Flask(__name__)
-model = pickle.load(open('my.pickle', 'rb'))
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+	return render_template('index.html')
 
-@app.route('/predict',methods=['POST'])
+@app.route('/predict', methods=['POST'])
 def predict():
-    input_features = [float(x) for x in request.form.values()]
-    features_value = [np.array(input_features)]
-    
-    features_name = ['num_preg', 'glucose_conc', 'diastolic_bp', 'thickness', 'insulin', 'bmi',
-             'diab_pred', 'age' , 'skin']
-    
-    df = pd.DataFrame(features_value, columns=features_name)
-    output = model.predict(df)
+    if request.method == 'POST':
+        preg = int(request.form['pregnancies'])
+        glucose = int(request.form['glucose'])
+        bp = int(request.form['bloodpressure'])
+        st = int(request.form['skinthickness'])
+        insulin = int(request.form['insulin'])
+        bmi = float(request.form['bmi'])
+        dpf = float(request.form['dpf'])
+        age = int(request.form['age'])
         
-    if output == 0:
-        res_val = "** Diabetes **"
-    else:
-        res_val = "No Diabetes"
+        data = np.array([[preg, glucose, bp, st, insulin, bmi, dpf, age]])
+        my_prediction = classifier.predict(data)
         
+        return render_template('result.html', prediction=my_prediction)
 
-    return render_template('index.html', prediction_text='Patient has {}'.format(res_val))
-
-if __name__ == "__main__":
-    app.run()
+if __name__ == '__main__':
+	app.run(debug=True)
